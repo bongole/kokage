@@ -14,6 +14,7 @@ type Conf struct {
 	dev        string
 	host       string
 	forward_to string
+	pcap_file  string
 }
 
 var CONF Conf
@@ -49,11 +50,19 @@ func (h *HttpRequests) HandleStream(stream *gopcapreader.Stream) {
 
 func main() {
 	flag.StringVar(&CONF.dev, "i", "eth0", "pcap interface")
-	flag.StringVar(&CONF.forward_to, "f", "127.0.0.1:80", "forward to")
-	flag.StringVar(&CONF.host, "h", "127.0.0.1", "host that serves httpd")
+	flag.StringVar(&CONF.host, "h", "127.0.0.1", "filter host")
+	flag.StringVar(&CONF.pcap_file, "f", "", "pcap file")
+	flag.StringVar(&CONF.forward_to, "c", "127.0.0.1:80", "forward host")
 	flag.Parse()
 
-	h, err := pcap.OpenLive(CONF.dev, 65535, false, 1000)
+	var h *pcap.Pcap
+	var err error
+	if CONF.pcap_file != "" {
+		h, err = pcap.OpenOffline(CONF.pcap_file)
+	} else {
+		h, err = pcap.OpenLive(CONF.dev, 65535, false, 1000)
+	}
+
 	if err != nil {
 		log.Fatal("pcap.OpenLive: ", err)
 	}
